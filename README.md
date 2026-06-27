@@ -18,4 +18,12 @@ A mobile app that sends a distress signal and live GPS location to pre-saved con
 
 ## How to Run
 cd EmergencyAlert4
+
 npm start
+**Emergency Alert App**
+- Built a mobile emergency alert app using React Native & Expo
+- Implemented live GPS location tracking
+- Send SMS alerts with Google Maps location link
+- Firebase Firestore backend integration
+- Tech Stack: React Native, Expo, Firebase, GPS, SMS
+- GitHub: github.com/Vishnu8681/EmergencyAlert_mobile-APP
