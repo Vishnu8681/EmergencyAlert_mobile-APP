@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, TextInput, ScrollView } from 'react-native';
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 
@@ -7,67 +7,63 @@ export default function App() {
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [contact, setContact] = useState('');
-  const [savedContact, setSavedContact] = useState(null);
+  const [contacts, setContacts] = useState([]);
 
   const saveContact = () => {
     if (contact.length < 10) {
       Alert.alert('Error', 'Please enter a valid phone number!');
       return;
     }
-    setSavedContact(contact);
-    Alert.alert('Success', `Contact ${contact} saved!`);
+    setContacts([...contacts, contact]);
+    setContact('');
+    Alert.alert('Success', 'Contact saved!');
   };
 
   const sendSOS = async () => {
-    if (!savedContact) {
-      Alert.alert('No Contact', 'Please save an emergency contact first!');
+    if (contacts.length === 0) {
+      Alert.alert('No Contacts', 'Please save an emergency contact first!');
       return;
     }
-
     setLoading(true);
     let { status } = await Location.requestForegroundPermissionsAsync();
-
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Allow location permission to use SOS!');
+      Alert.alert('Permission Denied', 'Allow location permission!');
       setLoading(false);
       return;
     }
-
     let loc = await Location.getCurrentPositionAsync({});
     setLocation(loc.coords);
-
     const isAvailable = await SMS.isAvailableAsync();
     if (isAvailable) {
       await SMS.sendSMSAsync(
-        [savedContact],
+        contacts,
         `🚨 EMERGENCY ALERT! 🚨\nI need help!\nMy location:\nhttps://maps.google.com/?q=${loc.coords.latitude},${loc.coords.longitude}`
       );
     } else {
-      Alert.alert('SMS Not Available', 'SMS is not available on this device!');
+      Alert.alert('SMS Not Available', 'SMS is not supported!');
     }
     setLoading(false);
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Emergency Alert</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>🚨 Emergency Alert</Text>
 
-      <View style={styles.contactBox}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter emergency contact number"
-          keyboardType="phone-pad"
-          value={contact}
-          onChangeText={setContact}
-        />
-        <TouchableOpacity style={styles.saveButton} onPress={saveContact}>
-          <Text style={styles.saveText}>Save Contact</Text>
-        </TouchableOpacity>
-      </View>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter emergency contact number"
+        keyboardType="phone-pad"
+        value={contact}
+        onChangeText={setContact}
+      />
 
-      {savedContact && (
-        <Text style={styles.savedText}>✅ Contact Saved: {savedContact}</Text>
-      )}
+      <TouchableOpacity style={styles.saveButton} onPress={saveContact}>
+        <Text style={styles.saveText}>Save Contact</Text>
+      </TouchableOpacity>
+
+      {contacts.map((c, i) => (
+        <Text key={i} style={styles.savedText}>✅ {c}</Text>
+      ))}
 
       <TouchableOpacity style={styles.sosButton} onPress={sendSOS}>
         <Text style={styles.sosText}>{loading ? '...' : 'SOS'}</Text>
@@ -77,31 +73,28 @@ export default function App() {
 
       {location && (
         <Text style={styles.locationText}>
-          Lat: {location.latitude.toFixed(4)}{'\n'}
+          📍 Lat: {location.latitude.toFixed(4)}{'\n'}
           Lon: {location.longitude.toFixed(4)}
         </Text>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    paddingTop: 60,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#ff0000',
     marginBottom: 30,
-  },
-  contactBox: {
-    width: '100%',
-    marginBottom: 20,
   },
   input: {
     borderWidth: 1,
@@ -110,12 +103,15 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     marginBottom: 10,
+    width: '100%',
   },
   saveButton: {
     backgroundColor: '#333',
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',
+    width: '100%',
+    marginBottom: 10,
   },
   saveText: {
     color: '#fff',
@@ -125,7 +121,7 @@ const styles = StyleSheet.create({
   savedText: {
     color: 'green',
     fontSize: 14,
-    marginBottom: 20,
+    marginBottom: 5,
   },
   sosButton: {
     width: 200,
@@ -135,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 10,
-    marginTop: 20,
+    marginTop: 30,
   },
   sosText: {
     fontSize: 60,
